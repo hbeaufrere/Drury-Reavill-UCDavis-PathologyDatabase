@@ -250,9 +250,9 @@ with tab_search:
         default=[c for c in ["id", "category", "breed", "sex", "age_text", "diagnosis", "diagnosis_category", "tissues", "specific_lesions"] if c in df.columns],
     )
     if show_cols:
-        st.dataframe(filtered[show_cols], use_container_width=True, height=500)
+        st.dataframe(filtered[show_cols], width="stretch", height=500)
     else:
-        st.dataframe(filtered, use_container_width=True, height=500)
+        st.dataframe(filtered, width="stretch", height=500)
 
     # CSV download
     csv = filtered.to_csv(index=False).encode("utf-8")
@@ -279,7 +279,7 @@ with tab_graph:
         counts.columns = [col_bar, "count"]
         fig = px.bar(counts, x=col_bar, y="count", title=f"Top {top_n} – {col_bar}", text_auto=True)
         fig.update_layout(xaxis_tickangle=-45, height=550)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # ----- Pie chart -----
     elif graph_type == "Pie chart":
@@ -289,7 +289,7 @@ with tab_graph:
         counts.columns = [col_pie, "count"]
         fig = px.pie(counts, names=col_pie, values="count", title=f"Distribution – {col_pie}")
         fig.update_layout(height=550)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # ----- Histogram -----
     elif graph_type == "Histogram (numeric)":
@@ -303,7 +303,7 @@ with tab_graph:
             color = None if color_by == "None" else color_by
             fig = px.histogram(gdf.dropna(subset=[col_hist]), x=col_hist, nbins=bins, color=color, title=f"Histogram – {col_hist}")
             fig.update_layout(height=550)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     # ----- Box plot -----
     elif graph_type == "Box plot":
@@ -319,7 +319,7 @@ with tab_graph:
             subset = gdf[gdf[x_col].isin(top_cats)].dropna(subset=[y_col])
             fig = px.box(subset, x=x_col, y=y_col, title=f"{y_col} by {x_col}")
             fig.update_layout(xaxis_tickangle=-45, height=550)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     # ----- Scatter -----
     elif graph_type == "Scatter plot":
@@ -335,7 +335,7 @@ with tab_graph:
             fig = px.scatter(gdf.dropna(subset=[x_sc, y_sc]).sample(n=min(sample_size, len(gdf.dropna(subset=[x_sc, y_sc]))), random_state=42),
                              x=x_sc, y=y_sc, color=color, title=f"{y_sc} vs {x_sc}", opacity=0.6)
             fig.update_layout(height=550)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     # ----- Time series -----
     elif graph_type == "Time series":
@@ -352,7 +352,7 @@ with tab_graph:
             ts = temp.set_index(date_col).resample(freq_map[agg]).size().reset_index(name="count")
             fig = px.line(ts, x=date_col, y="count", title=f"Record count per {agg.lower()}")
             fig.update_layout(height=550)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     # ----- Heatmap -----
     elif graph_type == "Heatmap (cross-tabulation)":
@@ -365,7 +365,7 @@ with tab_graph:
             ct = pd.crosstab(gdf[row_col], gdf[col_col])
             fig = px.imshow(ct, text_auto=True, title=f"{row_col} × {col_col}", aspect="auto")
             fig.update_layout(height=max(550, len(ct) * 22))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
 # ========================== RAW DATA TAB ===================================
 with tab_raw:
@@ -380,10 +380,10 @@ with tab_raw:
         "Null": [df[c].isna().sum() for c in df.columns],
         "Unique": [df[c].nunique() for c in df.columns],
     })
-    st.dataframe(col_info, use_container_width=True, hide_index=True)
+    st.dataframe(col_info, width="stretch", hide_index=True)
 
     st.subheader("Preview (first 100 rows)")
-    st.dataframe(df.head(100), use_container_width=True, height=400)
+    st.dataframe(df.head(100), width="stretch", height=400)
 
     # Full CSV download
     full_csv = df.to_csv(index=False).encode("utf-8")
