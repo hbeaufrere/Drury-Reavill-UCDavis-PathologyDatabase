@@ -19,6 +19,9 @@ PQ_CYTO_CYTOLOGY = os.path.join(DATA_DIR, "cyto_cytology.parquet")
 FILE_MAIN = os.path.join(DATA_DIR, "Database - Drury.xlsx")
 FILE_CYTO = os.path.join(DATA_DIR, "Database Drury Cytology.xlsx")
 
+# Max rows to display in tables (keeps browser responsive)
+MAX_DISPLAY_ROWS = 5000
+
 st.set_page_config(page_title="Drury Dataset Explorer", layout="wide")
 
 # ---------------------------------------------------------------------------
@@ -43,25 +46,18 @@ def parse_search_query(query_str):
     has_or  = bool(re.search(r'\bor\b',  raw, re.IGNORECASE))
 
     if has_and and not has_or:
-        # Split on 'and'
         parts = re.split(r'\s+and\s+', raw, flags=re.IGNORECASE)
         return ("and", [p.strip() for p in parts if p.strip()])
     elif has_or and not has_and:
-        # Split on 'or'
         parts = re.split(r'\s+or\s+', raw, flags=re.IGNORECASE)
         return ("or", [p.strip() for p in parts if p.strip()])
     elif has_and and has_or:
-        # Mixed: split on 'and' first (AND takes precedence), each piece can have ORs
-        # For simplicity, treat as AND of OR-groups — but keep it simple:
-        # just split on 'and', each sub-piece is an OR group
         parts = re.split(r'\s+and\s+', raw, flags=re.IGNORECASE)
         return ("and", [p.strip() for p in parts if p.strip()])
     elif ',' in raw:
-        # Comma-separated → OR
         parts = [p.strip() for p in raw.split(',') if p.strip()]
         return ("or", parts)
     else:
-        # Single term (may contain spaces — treat as one phrase)
         return ("or", [raw])
 
 
@@ -84,7 +80,6 @@ def parse_age_to_years(age_text):
     if dy_match:
         years += int(dy_match.group(1)) / 365.0
     if years == 0.0:
-        # try plain number
         try:
             return float(text)
         except ValueError:
@@ -135,7 +130,7 @@ if not data:
     st.stop()
 
 dataset_name = st.sidebar.selectbox("Dataset", list(data.keys()))
-df = data[dataset_name].copy()
+df = data[dataset_name]
 st.sidebar.markdown(f"**{len(df):,}** rows · **{len(df.columns)}** columns")
 
 # ---------------------------------------------------------------------------
@@ -210,7 +205,6 @@ with tab_search:
         mode, terms = parse_search_query(query)
         if terms:
             if mode == "or":
-                # Row matches if ANY term is found in ANY of the selected columns
                 text_mask = pd.Series(False, index=df.index)
                 for term in terms:
                     for col in search_cols:
@@ -218,7 +212,6 @@ with tab_search:
                             term, case=False, na=False, regex=False
                         )
             else:  # "and"
-                # Row matches if EVERY term is found somewhere across the selected columns
                 text_mask = pd.Series(True, index=df.index)
                 for term in terms:
                     term_found = pd.Series(False, index=df.index)
@@ -241,7 +234,8 @@ with tab_search:
         mask &= df["age_years"].between(age_range[0], age_range[1]) | df["age_years"].isna()
 
     filtered = df[mask]
-    st.markdown(f"### Results: **{len(filtered):,}** / {len(df):,} rows")
+    total_filtered = len(filtered)
+    st.markdown(f"### Results: **{total_filtered:,}** / {len(df):,} rows")
 
     # Display columns selector
     show_cols = st.multiselect(
@@ -249,12 +243,15 @@ with tab_search:
         options=df.columns.tolist(),
         default=[c for c in ["id", "category", "breed", "sex", "age_text", "diagnosis", "diagnosis_category", "tissues", "specific_lesions"] if c in df.columns],
     )
-    if show_cols:
-        st.dataframe(filtered[show_cols], width="stretch", height=500)
-    else:
-        st.dataframe(filtered, width="stretch", height=500)
 
-    # CSV download
+    # Limit displayed rows for performance
+    display_df = filtered[show_cols] if show_cols else filtered
+    if total_filtered > MAX_DISPLAY_ROWS:
+        st.caption(f"Showing first {MAX_DISPLAY_ROWS:,} of {total_filtered:,} rows. Use filters or download CSV for full results.")
+        display_df = display_df.head(MAX_DISPLAY_ROWS)
+    st.dataframe(display_df, height=500)
+
+    # CSV download (full filtered results)
     csv = filtered.to_csv(index=False).encode("utf-8")
     st.download_button("Download filtered results as CSV", csv, "drury_filtered.csv", "text/csv")
 
@@ -263,7 +260,7 @@ with tab_graph:
     st.header("Graphs & Visualisations")
 
     # Use filtered data from search tab
-    gdf = filtered.copy()
+    gdf = filtered
     st.info(f"Graphing **{len(gdf):,}** rows (apply filters in the Search tab to narrow down)")
 
     graph_type = st.selectbox(
@@ -279,7 +276,7 @@ with tab_graph:
         counts.columns = [col_bar, "count"]
         fig = px.bar(counts, x=col_bar, y="count", title=f"Top {top_n} – {col_bar}", text_auto=True)
         fig.update_layout(xaxis_tickangle=-45, height=550)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
     # ----- Pie chart -----
     elif graph_type == "Pie chart":
@@ -289,7 +286,7 @@ with tab_graph:
         counts.columns = [col_pie, "count"]
         fig = px.pie(counts, names=col_pie, values="count", title=f"Distribution – {col_pie}")
         fig.update_layout(height=550)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
     # ----- Histogram -----
     elif graph_type == "Histogram (numeric)":
@@ -303,7 +300,7 @@ with tab_graph:
             color = None if color_by == "None" else color_by
             fig = px.histogram(gdf.dropna(subset=[col_hist]), x=col_hist, nbins=bins, color=color, title=f"Histogram – {col_hist}")
             fig.update_layout(height=550)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
     # ----- Box plot -----
     elif graph_type == "Box plot":
@@ -319,7 +316,7 @@ with tab_graph:
             subset = gdf[gdf[x_col].isin(top_cats)].dropna(subset=[y_col])
             fig = px.box(subset, x=x_col, y=y_col, title=f"{y_col} by {x_col}")
             fig.update_layout(xaxis_tickangle=-45, height=550)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
     # ----- Scatter -----
     elif graph_type == "Scatter plot":
@@ -331,11 +328,12 @@ with tab_graph:
             y_sc = st.selectbox("Y axis", [c for c in num_cols if c != x_sc], key="sc_y")
             color_sc = st.selectbox("Color by (optional)", ["None"] + [c for c in gdf.columns if gdf[c].nunique() < 20], key="sc_color")
             color = None if color_sc == "None" else color_sc
-            sample_size = min(5000, len(gdf))
-            fig = px.scatter(gdf.dropna(subset=[x_sc, y_sc]).sample(n=min(sample_size, len(gdf.dropna(subset=[x_sc, y_sc]))), random_state=42),
-                             x=x_sc, y=y_sc, color=color, title=f"{y_sc} vs {x_sc}", opacity=0.6)
+            plot_data = gdf.dropna(subset=[x_sc, y_sc])
+            if len(plot_data) > 5000:
+                plot_data = plot_data.sample(n=5000, random_state=42)
+            fig = px.scatter(plot_data, x=x_sc, y=y_sc, color=color, title=f"{y_sc} vs {x_sc}", opacity=0.6)
             fig.update_layout(height=550)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
     # ----- Time series -----
     elif graph_type == "Time series":
@@ -345,14 +343,14 @@ with tab_graph:
         else:
             date_col = st.selectbox("Date column", date_cols, key="ts_date")
             agg = st.selectbox("Aggregate by", ["Month", "Year", "Week"], key="ts_agg")
-            temp = gdf.copy()
+            temp = gdf[[date_col]].copy()
             temp[date_col] = pd.to_datetime(temp[date_col], errors="coerce")
             temp = temp.dropna(subset=[date_col])
             freq_map = {"Month": "ME", "Year": "YE", "Week": "W"}
             ts = temp.set_index(date_col).resample(freq_map[agg]).size().reset_index(name="count")
             fig = px.line(ts, x=date_col, y="count", title=f"Record count per {agg.lower()}")
             fig.update_layout(height=550)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
     # ----- Heatmap -----
     elif graph_type == "Heatmap (cross-tabulation)":
@@ -365,7 +363,7 @@ with tab_graph:
             ct = pd.crosstab(gdf[row_col], gdf[col_col])
             fig = px.imshow(ct, text_auto=True, title=f"{row_col} × {col_col}", aspect="auto")
             fig.update_layout(height=max(550, len(ct) * 22))
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
 # ========================== RAW DATA TAB ===================================
 with tab_raw:
@@ -380,10 +378,10 @@ with tab_raw:
         "Null": [df[c].isna().sum() for c in df.columns],
         "Unique": [df[c].nunique() for c in df.columns],
     })
-    st.dataframe(col_info, width="stretch", hide_index=True)
+    st.dataframe(col_info, hide_index=True)
 
     st.subheader("Preview (first 100 rows)")
-    st.dataframe(df.head(100), width="stretch", height=400)
+    st.dataframe(df.head(100), height=400)
 
     # Full CSV download
     full_csv = df.to_csv(index=False).encode("utf-8")
