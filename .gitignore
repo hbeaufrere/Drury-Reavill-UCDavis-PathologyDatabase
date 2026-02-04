@@ -1,0 +1,13 @@
+# Excel originals (large — Parquet versions are committed instead)
+*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+# IDE
+.claude/
+.vscode/
