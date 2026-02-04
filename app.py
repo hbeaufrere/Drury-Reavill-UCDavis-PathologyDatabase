@@ -151,7 +151,7 @@ with tab_search:
     search_cols = st.multiselect(
         "Columns to search in",
         options=searchable,
-        default=[c for c in ["breed", "category", "diagnosis", "keywords", "tissues", "specific_lesions"] if c in searchable],
+        default=[c for c in ["breed", "category", "diagnosis", "tissues", "specific_lesions"] if c in searchable],
     )
     query = st.text_input(
         "Search terms",
@@ -243,7 +243,7 @@ with tab_search:
     st.markdown(f"### Results: **{total_filtered:,}** / {len(df):,} rows")
 
     # Display columns selector
-    default_display = [c for c in ["id", "category", "breed", "sex", "age_text", "diagnosis",
+    default_display = [c for c in ["animal_name", "category", "breed", "sex", "age_text", "diagnosis",
                                     "diagnosis_category", "tissues", "specific_lesions"] if c in df.columns]
     show_cols = st.multiselect("Columns to display", options=df.columns.tolist(), default=default_display)
 
