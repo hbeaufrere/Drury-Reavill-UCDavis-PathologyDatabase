@@ -11,9 +11,11 @@ import re
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Parquet files (preferred – smaller & faster)
-PQ_REPORTS_MAIN = os.path.join(DATA_DIR, "reports_main.parquet")
-PQ_CYTO_REPORTS = os.path.join(DATA_DIR, "cyto_reports.parquet")
-PQ_CYTO_CYTOLOGY = os.path.join(DATA_DIR, "cyto_cytology.parquet")
+PQ_FILES = {
+    "Reports (Main)": os.path.join(DATA_DIR, "reports_main.parquet"),
+    "Reports (Cytology file)": os.path.join(DATA_DIR, "cyto_reports.parquet"),
+    "Cytology": os.path.join(DATA_DIR, "cyto_cytology.parquet"),
+}
 
 # Excel fallbacks
 FILE_MAIN = os.path.join(DATA_DIR, "Database - Drury.xlsx")
@@ -31,17 +33,15 @@ st.set_page_config(page_title="Drury Dataset Explorer", layout="wide")
 def parse_search_query(query_str):
     """
     Parse a human-friendly search string.
-      - 'or'  between terms  → match ANY term        (e.g. lymphoma or carcinoma)
-      - 'and' between terms  → match ALL terms        (e.g. lymphoma and liver)
-      - comma ','            → treated as OR
-      - plain space when no 'and'/'or' present → OR
+      - 'or'  between terms  -> match ANY term        (e.g. lymphoma or carcinoma)
+      - 'and' between terms  -> match ALL terms        (e.g. lymphoma and liver)
+      - comma ','            -> treated as OR
     Returns (mode, terms)  where mode is 'or' or 'and'.
     """
     raw = query_str.strip()
     if not raw:
         return ("or", [])
 
-    # Detect explicit connectors (case-insensitive, whole-word)
     has_and = bool(re.search(r'\band\b', raw, re.IGNORECASE))
     has_or  = bool(re.search(r'\bor\b',  raw, re.IGNORECASE))
 
@@ -87,51 +87,55 @@ def parse_age_to_years(age_text):
     return round(years, 2)
 
 
-@st.cache_data(show_spinner="Loading data …")
-def load_data():
-    """Load data from Parquet (preferred) or Excel (fallback)."""
-    frames = {}
+@st.cache_data(show_spinner="Loading data...")
+def load_single_dataset(name):
+    """Load a single dataset by name (lazy: only one at a time)."""
+    pq_path = PQ_FILES.get(name)
+    if pq_path and os.path.exists(pq_path):
+        df = pd.read_parquet(pq_path)
+    elif name == "Reports (Main)" and os.path.exists(FILE_MAIN):
+        df = pd.read_excel(FILE_MAIN, sheet_name="reports", engine="openpyxl")
+    elif name == "Reports (Cytology file)" and os.path.exists(FILE_CYTO):
+        df = pd.read_excel(FILE_CYTO, sheet_name="reports", engine="openpyxl")
+    elif name == "Cytology" and os.path.exists(FILE_CYTO):
+        df = pd.read_excel(FILE_CYTO, sheet_name="Cytology", engine="openpyxl")
+    else:
+        return None
 
-    # --- Reports (Main) ---
-    if os.path.exists(PQ_REPORTS_MAIN):
-        frames["Reports (Main)"] = pd.read_parquet(PQ_REPORTS_MAIN)
-    elif os.path.exists(FILE_MAIN):
-        frames["Reports (Main)"] = pd.read_excel(FILE_MAIN, sheet_name="reports", engine="openpyxl")
-
-    # --- Cytology file: reports sheet ---
-    if os.path.exists(PQ_CYTO_REPORTS):
-        frames["Reports (Cytology file)"] = pd.read_parquet(PQ_CYTO_REPORTS)
-    elif os.path.exists(FILE_CYTO):
-        frames["Reports (Cytology file)"] = pd.read_excel(FILE_CYTO, sheet_name="reports", engine="openpyxl")
-
-    # --- Cytology file: Cytology sheet ---
-    if os.path.exists(PQ_CYTO_CYTOLOGY):
-        frames["Cytology – Cytology"] = pd.read_parquet(PQ_CYTO_CYTOLOGY)
-    elif os.path.exists(FILE_CYTO):
-        frames["Cytology – Cytology"] = pd.read_excel(FILE_CYTO, sheet_name="Cytology", engine="openpyxl")
-
-    # Post-process: parse ages
-    for label, df in frames.items():
-        if "age_text" in df.columns:
-            df["age_years"] = df["age_text"].apply(parse_age_to_years)
-        elif "age" in df.columns:
-            df["age_years"] = pd.to_numeric(df["age"], errors="coerce")
-    return frames
+    # Parse ages
+    if "age_text" in df.columns:
+        df["age_years"] = df["age_text"].apply(parse_age_to_years)
+    elif "age" in df.columns:
+        df["age_years"] = pd.to_numeric(df["age"], errors="coerce")
+    return df
 
 
 # ---------------------------------------------------------------------------
-# Sidebar – Dataset selector
+# Sidebar - Dataset selector
 # ---------------------------------------------------------------------------
 st.sidebar.title("Drury Dataset Explorer")
-data = load_data()
 
-if not data:
-    st.error("No data files found. Place the Excel files in the same directory as this script.")
+# Determine available datasets
+available = [name for name, path in PQ_FILES.items() if os.path.exists(path)]
+if not available:
+    # Try Excel fallbacks
+    if os.path.exists(FILE_MAIN):
+        available.append("Reports (Main)")
+    if os.path.exists(FILE_CYTO):
+        available.extend(["Reports (Cytology file)", "Cytology"])
+
+if not available:
+    st.error("No data files found. Place the data files in the same directory as this script.")
     st.stop()
 
-dataset_name = st.sidebar.selectbox("Dataset", list(data.keys()))
-df = data[dataset_name]
-st.sidebar.markdown(f"**{len(df):,}** rows · **{len(df.columns)}** columns")
+dataset_name = st.sidebar.selectbox("Dataset", available)
+df = load_single_dataset(dataset_name)
+
+if df is None:
+    st.error(f"Could not load dataset: {dataset_name}")
+    st.stop()
+
+st.sidebar.markdown(f"**{len(df):,}** rows | **{len(df.columns)}** columns")
 
 # ---------------------------------------------------------------------------
 # Tabs
@@ -143,10 +147,11 @@ with tab_search:
     st.header("Search & Filter")
 
     # --- free-text search ---
+    searchable = [c for c in df.columns if df[c].dtype == "object" or str(df[c].dtype) == "string"]
     search_cols = st.multiselect(
         "Columns to search in",
-        options=df.columns.tolist(),
-        default=[c for c in ["breed", "category", "diagnosis", "keywords", "tissues", "specific_lesions", "report_text"] if c in df.columns],
+        options=searchable,
+        default=[c for c in ["breed", "category", "diagnosis", "keywords", "tissues", "specific_lesions"] if c in searchable],
     )
     query = st.text_input(
         "Search terms",
@@ -188,13 +193,13 @@ with tab_search:
         else:
             sel_diag = []
     with col5:
-        if "age_years" in df.columns:
-            min_age = float(df["age_years"].min()) if df["age_years"].notna().any() else 0.0
-            max_age = float(df["age_years"].max()) if df["age_years"].notna().any() else 50.0
+        if "age_years" in df.columns and df["age_years"].notna().any():
+            min_age = float(df["age_years"].min())
+            max_age = float(df["age_years"].max())
             if max_age > min_age:
                 age_range = st.slider("Age range (years)", min_age, max_age, (min_age, max_age))
             else:
-                age_range = (min_age, max_age)
+                age_range = None
         else:
             age_range = None
 
@@ -211,7 +216,7 @@ with tab_search:
                         text_mask |= df[col].astype(str).str.contains(
                             term, case=False, na=False, regex=False
                         )
-            else:  # "and"
+            else:
                 text_mask = pd.Series(True, index=df.index)
                 for term in terms:
                     term_found = pd.Series(False, index=df.index)
@@ -233,25 +238,21 @@ with tab_search:
     if age_range and "age_years" in df.columns:
         mask &= df["age_years"].between(age_range[0], age_range[1]) | df["age_years"].isna()
 
-    filtered = df[mask]
+    filtered = df.loc[mask]
     total_filtered = len(filtered)
     st.markdown(f"### Results: **{total_filtered:,}** / {len(df):,} rows")
 
     # Display columns selector
-    show_cols = st.multiselect(
-        "Columns to display",
-        options=df.columns.tolist(),
-        default=[c for c in ["id", "category", "breed", "sex", "age_text", "diagnosis", "diagnosis_category", "tissues", "specific_lesions"] if c in df.columns],
-    )
+    default_display = [c for c in ["id", "category", "breed", "sex", "age_text", "diagnosis",
+                                    "diagnosis_category", "tissues", "specific_lesions"] if c in df.columns]
+    show_cols = st.multiselect("Columns to display", options=df.columns.tolist(), default=default_display)
 
-    # Limit displayed rows for performance
     display_df = filtered[show_cols] if show_cols else filtered
     if total_filtered > MAX_DISPLAY_ROWS:
-        st.caption(f"Showing first {MAX_DISPLAY_ROWS:,} of {total_filtered:,} rows. Use filters or download CSV for full results.")
+        st.caption(f"Showing first {MAX_DISPLAY_ROWS:,} of {total_filtered:,} rows. Download CSV for full results.")
         display_df = display_df.head(MAX_DISPLAY_ROWS)
-    st.dataframe(display_df, height=500)
+    st.dataframe(display_df, height=500, use_container_width=True)
 
-    # CSV download (full filtered results)
     csv = filtered.to_csv(index=False).encode("utf-8")
     st.download_button("Download filtered results as CSV", csv, "drury_filtered.csv", "text/csv")
 
@@ -259,36 +260,35 @@ with tab_search:
 with tab_graph:
     st.header("Graphs & Visualisations")
 
-    # Use filtered data from search tab
     gdf = filtered
     st.info(f"Graphing **{len(gdf):,}** rows (apply filters in the Search tab to narrow down)")
 
     graph_type = st.selectbox(
         "Chart type",
-        ["Bar chart – counts", "Pie chart", "Histogram (numeric)", "Box plot", "Scatter plot", "Time series", "Heatmap (cross-tabulation)"],
+        ["Bar chart", "Pie chart", "Histogram (numeric)", "Box plot",
+         "Scatter plot", "Time series", "Heatmap (cross-tabulation)"],
     )
 
-    # ----- Bar chart -----
-    if graph_type == "Bar chart – counts":
-        col_bar = st.selectbox("Count by column", [c for c in gdf.columns if gdf[c].dtype == "object" or gdf[c].nunique() < 100], key="bar_col")
+    if graph_type == "Bar chart":
+        col_bar = st.selectbox("Count by column",
+            [c for c in gdf.columns if gdf[c].dtype == "object" or gdf[c].nunique() < 100], key="bar_col")
         top_n = st.slider("Show top N values", 5, 50, 20, key="bar_top")
         counts = gdf[col_bar].value_counts().head(top_n).reset_index()
         counts.columns = [col_bar, "count"]
-        fig = px.bar(counts, x=col_bar, y="count", title=f"Top {top_n} – {col_bar}", text_auto=True)
+        fig = px.bar(counts, x=col_bar, y="count", title=f"Top {top_n} - {col_bar}", text_auto=True)
         fig.update_layout(xaxis_tickangle=-45, height=550)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Pie chart -----
     elif graph_type == "Pie chart":
-        col_pie = st.selectbox("Group by column", [c for c in gdf.columns if gdf[c].dtype == "object" or gdf[c].nunique() < 100], key="pie_col")
+        col_pie = st.selectbox("Group by column",
+            [c for c in gdf.columns if gdf[c].dtype == "object" or gdf[c].nunique() < 100], key="pie_col")
         top_n_pie = st.slider("Show top N values", 5, 30, 10, key="pie_top")
         counts = gdf[col_pie].value_counts().head(top_n_pie).reset_index()
         counts.columns = [col_pie, "count"]
-        fig = px.pie(counts, names=col_pie, values="count", title=f"Distribution – {col_pie}")
+        fig = px.pie(counts, names=col_pie, values="count", title=f"Distribution - {col_pie}")
         fig.update_layout(height=550)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Histogram -----
     elif graph_type == "Histogram (numeric)":
         num_cols = [c for c in gdf.columns if pd.api.types.is_numeric_dtype(gdf[c])]
         if not num_cols:
@@ -296,13 +296,14 @@ with tab_graph:
         else:
             col_hist = st.selectbox("Column", num_cols, key="hist_col")
             bins = st.slider("Number of bins", 10, 200, 50, key="hist_bins")
-            color_by = st.selectbox("Color by (optional)", ["None"] + [c for c in gdf.columns if gdf[c].nunique() < 20], key="hist_color")
+            color_by = st.selectbox("Color by (optional)",
+                ["None"] + [c for c in gdf.columns if gdf[c].nunique() < 20], key="hist_color")
             color = None if color_by == "None" else color_by
-            fig = px.histogram(gdf.dropna(subset=[col_hist]), x=col_hist, nbins=bins, color=color, title=f"Histogram – {col_hist}")
+            fig = px.histogram(gdf.dropna(subset=[col_hist]), x=col_hist, nbins=bins,
+                               color=color, title=f"Histogram - {col_hist}")
             fig.update_layout(height=550)
             st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Box plot -----
     elif graph_type == "Box plot":
         num_cols = [c for c in gdf.columns if pd.api.types.is_numeric_dtype(gdf[c])]
         cat_cols = [c for c in gdf.columns if gdf[c].dtype == "object" or gdf[c].nunique() < 50]
@@ -318,7 +319,6 @@ with tab_graph:
             fig.update_layout(xaxis_tickangle=-45, height=550)
             st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Scatter -----
     elif graph_type == "Scatter plot":
         num_cols = [c for c in gdf.columns if pd.api.types.is_numeric_dtype(gdf[c])]
         if len(num_cols) < 2:
@@ -326,16 +326,17 @@ with tab_graph:
         else:
             x_sc = st.selectbox("X axis", num_cols, key="sc_x")
             y_sc = st.selectbox("Y axis", [c for c in num_cols if c != x_sc], key="sc_y")
-            color_sc = st.selectbox("Color by (optional)", ["None"] + [c for c in gdf.columns if gdf[c].nunique() < 20], key="sc_color")
+            color_sc = st.selectbox("Color by (optional)",
+                ["None"] + [c for c in gdf.columns if gdf[c].nunique() < 20], key="sc_color")
             color = None if color_sc == "None" else color_sc
             plot_data = gdf.dropna(subset=[x_sc, y_sc])
             if len(plot_data) > 5000:
                 plot_data = plot_data.sample(n=5000, random_state=42)
-            fig = px.scatter(plot_data, x=x_sc, y=y_sc, color=color, title=f"{y_sc} vs {x_sc}", opacity=0.6)
+            fig = px.scatter(plot_data, x=x_sc, y=y_sc, color=color,
+                             title=f"{y_sc} vs {x_sc}", opacity=0.6)
             fig.update_layout(height=550)
             st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Time series -----
     elif graph_type == "Time series":
         date_cols = [c for c in gdf.columns if "date" in c.lower()]
         if not date_cols:
@@ -352,23 +353,23 @@ with tab_graph:
             fig.update_layout(height=550)
             st.plotly_chart(fig, use_container_width=True)
 
-    # ----- Heatmap -----
     elif graph_type == "Heatmap (cross-tabulation)":
         cat_cols = [c for c in gdf.columns if gdf[c].dtype == "object" and 2 <= gdf[c].nunique() <= 50]
         if len(cat_cols) < 2:
             st.warning("Need at least two categorical columns with 2-50 unique values.")
         else:
             row_col = st.selectbox("Row variable", cat_cols, key="hm_row")
-            col_col = st.selectbox("Column variable", [c for c in cat_cols if c != row_col], key="hm_col")
+            col_col = st.selectbox("Column variable",
+                [c for c in cat_cols if c != row_col], key="hm_col")
             ct = pd.crosstab(gdf[row_col], gdf[col_col])
-            fig = px.imshow(ct, text_auto=True, title=f"{row_col} × {col_col}", aspect="auto")
+            fig = px.imshow(ct, text_auto=True, title=f"{row_col} x {col_col}", aspect="auto")
             fig.update_layout(height=max(550, len(ct) * 22))
             st.plotly_chart(fig, use_container_width=True)
 
 # ========================== RAW DATA TAB ===================================
 with tab_raw:
     st.header("Raw Data")
-    st.markdown(f"**Dataset:** {dataset_name} — {len(df):,} rows × {len(df.columns)} columns")
+    st.markdown(f"**Dataset:** {dataset_name} - {len(df):,} rows x {len(df.columns)} columns")
 
     st.subheader("Column overview")
     col_info = pd.DataFrame({
@@ -378,11 +379,11 @@ with tab_raw:
         "Null": [df[c].isna().sum() for c in df.columns],
         "Unique": [df[c].nunique() for c in df.columns],
     })
-    st.dataframe(col_info, hide_index=True)
+    st.dataframe(col_info, hide_index=True, use_container_width=True)
 
     st.subheader("Preview (first 100 rows)")
-    st.dataframe(df.head(100), height=400)
+    st.dataframe(df.head(100), height=400, use_container_width=True)
 
-    # Full CSV download
     full_csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download full dataset as CSV", full_csv, f"drury_{dataset_name.replace(' ', '_')}.csv", "text/csv")
+    st.download_button("Download full dataset as CSV", full_csv,
+                        f"drury_{dataset_name.replace(' ', '_')}.csv", "text/csv")
