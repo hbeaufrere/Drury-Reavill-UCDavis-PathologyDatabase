@@ -1,0 +1,25 @@
+name: Seed database
+
+on:
+  workflow_dispatch:
+    inputs:
+      database_url:
+        description: "Postgres connection string (use the Neon DIRECT/unpooled URL)"
+        required: true
+        type: string
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Mask connection string in logs
+        run: echo "::add-mask::${{ inputs.database_url }}"
+      - run: npm ci
+      - name: Seed
+        env:
+          DATABASE_URL: ${{ inputs.database_url }}
+        run: npm run db:seed
