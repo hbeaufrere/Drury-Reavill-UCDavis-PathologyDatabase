@@ -55,8 +55,31 @@ export default function ExplorePage() {
   const [sort, setSort] = useState<Sort | null>(null);
   const [customCols, setCustomCols] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessCode, setAccessCode] = useState("");
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [dlError, setDlError] = useState<string | null>(null);
   const pageSize = 50;
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("drury_access_code");
+      if (saved) setAccessCode(saved);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  const saveAccessCode = (v: string) => {
+    setAccessCode(v);
+    try {
+      if (v) localStorage.setItem("drury_access_code", v);
+      else localStorage.removeItem("drury_access_code");
+    } catch {
+      /* storage unavailable */
+    }
+  };
 
   const admin = meta?.admin ?? false;
   const allColumns = useMemo(
@@ -140,10 +163,38 @@ export default function ExplorePage() {
     setPage(1);
   };
 
-  const exportUrl = useMemo(
-    () => `/api/export?${filterParams(filters).toString()}`,
-    [filters]
-  );
+  const exportUrl = useMemo(() => {
+    const p = filterParams(filters);
+    if (accessCode.trim()) p.set("code", accessCode.trim());
+    return `/api/export?${p.toString()}`;
+  }, [filters, accessCode]);
+
+  const exportEligible =
+    admin ||
+    accessCode.trim().length > 0 ||
+    (activeFilterCount(filters) > 0 && total <= EXPORT_LIMIT);
+
+  const doDownload = async () => {
+    setDownloading(true);
+    setDlError(null);
+    try {
+      const r = await fetch(exportUrl);
+      if (!r.ok) {
+        const j = await r.json().catch(() => null);
+        throw new Error(j?.error ?? "Download failed");
+      }
+      const blob = await r.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `drury_${filters.dataset}_export.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      setDlError(e instanceof Error ? e.message : "Download failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-[1500px] px-4 py-6 lg:px-8">
@@ -247,10 +298,15 @@ export default function ExplorePage() {
                           placeholder="Columns to display"
                         />
                       </div>
-                      {admin || (activeFilterCount(filters) > 0 && total <= EXPORT_LIMIT) ? (
-                        <a className="btn btn-primary" href={exportUrl} download>
-                          Download CSV
-                        </a>
+                      {exportEligible ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={doDownload}
+                          disabled={downloading}
+                        >
+                          {downloading ? "Preparing…" : "Download CSV"}
+                        </button>
                       ) : (
                         <span
                           className="btn"
@@ -267,6 +323,52 @@ export default function ExplorePage() {
                     </div>
                   )}
                 </div>
+                {view === "explore" && (dlError || !admin) && (
+                  <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
+                    {dlError && (
+                      <p className="w-full" style={{ color: "var(--series-8)" }}>
+                        {dlError}
+                      </p>
+                    )}
+                    {!admin &&
+                      (showCodeInput || accessCode ? (
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium" style={{ color: "var(--ink-2)" }}>
+                            Download access code
+                          </span>
+                          <input
+                            className="input"
+                            style={{ width: "13rem", padding: "0.25rem 0.5rem" }}
+                            value={accessCode}
+                            onChange={(e) =>
+                              saveAccessCode(e.target.value.toUpperCase().trim())
+                            }
+                            placeholder="e.g. 3F62A9C48B17D05E"
+                          />
+                          {accessCode && (
+                            <button
+                              type="button"
+                              style={{ color: "var(--accent)" }}
+                              onClick={() => {
+                                saveAccessCode("");
+                                setShowCodeInput(false);
+                              }}
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          style={{ color: "var(--accent)" }}
+                          onClick={() => setShowCodeInput(true)}
+                        >
+                          Have a download access code?
+                        </button>
+                      ))}
+                  </div>
+                )}
                 {view === "explore" ? (
                   <DataTable
                     rows={rows}

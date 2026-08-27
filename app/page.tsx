@@ -440,7 +440,9 @@ export default async function LandingPage() {
                 hbeaufrere@ucdavis.edu
               </a>{" "}
               describing the purpose of your request and how the data will be
-              used. Patient identities are anonymized for public access.
+              used — approved requests receive a download access code that
+              unlocks larger exports in the explorer. Patient identities are
+              anonymized for public access.
             </p>
           </div>
         </section>

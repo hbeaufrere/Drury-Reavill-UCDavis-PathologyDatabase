@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
+import { isValidCode } from "@/lib/codes";
 import { dbConfigured, query, type Row } from "@/lib/db";
 import {
   buildWhere,
@@ -31,8 +32,11 @@ export async function GET(req: NextRequest) {
   const where = buildWhere(filters);
 
   // Public downloads require an actual search and a result set under the
-  // limit; the admin is exempt. Enforced here so the UI can't be bypassed.
-  if (!admin) {
+  // limit. The admin is exempt, as is anyone with a valid download access
+  // code issued by the admin. Enforced here so the UI can't be bypassed.
+  const accessCode = req.nextUrl.searchParams.get("code") ?? "";
+  const privileged = admin || (await isValidCode(accessCode).catch(() => false));
+  if (!privileged) {
     if (!hasActiveFilters(filters)) {
       return NextResponse.json(
         { error: `Downloads are only available for search results. Apply a search or filter first. ${CONTACT}` },
