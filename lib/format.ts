@@ -6,7 +6,7 @@ export const COLUMN_LABELS: Record<string, string> = {
   age: "Age (years)",
   age_text: "Age note",
   diagnosis: "Diagnosis (full text)",
-  tissues: "Tissues submitted",
+  tissues: "Organs (n)",
   stains: "Special stains",
   stains_charge: "Stain charge",
   charge_type: "Service type",

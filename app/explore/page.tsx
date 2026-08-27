@@ -8,7 +8,12 @@ import FilterPanel, { Meta } from "@/components/FilterPanel";
 import MultiSelect from "@/components/MultiSelect";
 import SummaryPanel from "@/components/SummaryPanel";
 import { fmtInt, label as colLabel } from "@/lib/format";
-import { EMPTY_FILTERS, ExplorerFilters, filterParams } from "@/lib/state";
+import {
+  EMPTY_FILTERS,
+  ExplorerFilters,
+  activeFilterCount,
+  filterParams,
+} from "@/lib/state";
 
 const DATASET_TABS = [
   { id: "main", name: "Pathology reports" },
@@ -28,9 +33,11 @@ const PUBLIC_COLUMNS = [
 ];
 
 const PUBLIC_DEFAULT_VISIBLE = [
-  "category", "breed", "sex", "age", "diagnosis",
+  "category", "breed", "sex", "age", "diagnosis", "tissues",
   "diagnosis_category", "specific_lesions",
 ];
+
+const EXPORT_LIMIT = 1000;
 
 const SEARCHABLE = [
   "category", "breed", "sex", "age_text", "diagnosis", "stains",
@@ -240,9 +247,23 @@ export default function ExplorePage() {
                           placeholder="Columns to display"
                         />
                       </div>
-                      <a className="btn btn-primary" href={exportUrl} download>
-                        Download CSV
-                      </a>
+                      {admin || (activeFilterCount(filters) > 0 && total <= EXPORT_LIMIT) ? (
+                        <a className="btn btn-primary" href={exportUrl} download>
+                          Download CSV
+                        </a>
+                      ) : (
+                        <span
+                          className="btn"
+                          style={{ opacity: 0.55, cursor: "not-allowed" }}
+                          title={
+                            activeFilterCount(filters) === 0
+                              ? "Apply a search or filter first"
+                              : `Downloads are limited to ${EXPORT_LIMIT.toLocaleString()} records`
+                          }
+                        >
+                          Download CSV
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -272,7 +293,16 @@ export default function ExplorePage() {
         style={{ borderColor: "var(--grid)", color: "var(--muted)" }}
       >
         Drury R. Reavill Pathology Database at UC Davis · patient identities are
-        anonymized for public access · Data served from Neon Postgres
+        anonymized for public access · CSV downloads are limited to search
+        results under {EXPORT_LIMIT.toLocaleString()} records — for larger
+        extracts email{" "}
+        <a href="mailto:hbeaufrere@ucdavis.edu" style={{ color: "var(--accent)" }}>
+          hbeaufrere@ucdavis.edu
+        </a>{" "}
+        with the purpose of your request ·{" "}
+        <Link href="/#cite" style={{ color: "var(--accent)" }}>
+          How to cite
+        </Link>
       </footer>
     </div>
   );
