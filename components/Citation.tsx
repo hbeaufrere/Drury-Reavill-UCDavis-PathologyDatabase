@@ -19,7 +19,7 @@ export default function Citation() {
     day: "numeric",
   });
   const year = new Date().getFullYear();
-  const citation = `Reavill DR, Beaufrère H. Drury R. Reavill Pathology Database at UC Davis. Davis (CA): University of California, Davis, School of Veterinary Medicine; ${year}. Available from: ${url || "this website"}. Accessed ${today}.`;
+  const citation = `Drury R. Reavill Pathology Database at UC Davis. Davis (CA): University of California, Davis, School of Veterinary Medicine; ${year}. Available from: ${url || "this website"}. Accessed ${today}.`;
 
   const copy = async () => {
     try {
