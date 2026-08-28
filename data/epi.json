@@ -1,0 +1,565 @@
+{
+ "processMix": [
+  {
+   "cls": "Birds",
+   "n": 17053,
+   "Tumor": 17.9,
+   "Inflammatory": 31.5,
+   "Infection": 15.2,
+   "Metabolic/degenerative": 19.1,
+   "Other": 16.3
+  },
+  {
+   "cls": "Mammals",
+   "n": 11499,
+   "Tumor": 41.5,
+   "Inflammatory": 28.9,
+   "Infection": 10.1,
+   "Metabolic/degenerative": 11.8,
+   "Other": 7.8
+  },
+  {
+   "cls": "Reptiles",
+   "n": 4609,
+   "Tumor": 14.0,
+   "Inflammatory": 34.1,
+   "Infection": 27.5,
+   "Metabolic/degenerative": 13.8,
+   "Other": 10.7
+  },
+  {
+   "cls": "Fish",
+   "n": 1878,
+   "Tumor": 10.3,
+   "Inflammatory": 34.3,
+   "Infection": 22.5,
+   "Metabolic/degenerative": 15.1,
+   "Other": 17.7
+  },
+  {
+   "cls": "Amphibians",
+   "n": 1145,
+   "Tumor": 5.2,
+   "Inflammatory": 27.4,
+   "Infection": 33.5,
+   "Metabolic/degenerative": 19.5,
+   "Other": 14.4
+  }
+ ],
+ "infectionAgents": [
+  {
+   "cls": "Birds",
+   "n": 2585,
+   "Bacteria": 30.8,
+   "Fungus": 18.8,
+   "Virus": 25.7,
+   "Protozoa": 10.6,
+   "Metazoan": 8.0,
+   "Yeast": 5.8
+  },
+  {
+   "cls": "Mammals",
+   "n": 1158,
+   "Bacteria": 62.3,
+   "Fungus": 4.6,
+   "Virus": 7.9,
+   "Protozoa": 8.6,
+   "Metazoan": 15.7,
+   "Yeast": 0.3
+  },
+  {
+   "cls": "Reptiles",
+   "n": 1266,
+   "Bacteria": 43.0,
+   "Fungus": 20.0,
+   "Virus": 12.5,
+   "Protozoa": 14.5,
+   "Metazoan": 9.2,
+   "Yeast": 0.1
+  },
+  {
+   "cls": "Fish",
+   "n": 423,
+   "Bacteria": 36.9,
+   "Fungus": 3.8,
+   "Virus": 4.0,
+   "Protozoa": 29.6,
+   "Metazoan": 25.1,
+   "Yeast": 0.0
+  },
+  {
+   "cls": "Amphibians",
+   "n": 384,
+   "Bacteria": 30.5,
+   "Fungus": 23.7,
+   "Virus": 0.3,
+   "Protozoa": 6.8,
+   "Metazoan": 38.5,
+   "Yeast": 0.0
+  }
+ ],
+ "tumorByAge": [
+  {
+   "bin": "0\u20131",
+   "All classes": 3.5,
+   "All classes_n": 3307,
+   "Birds": 1.9,
+   "Birds_n": 1800,
+   "Mammals": 6.6,
+   "Mammals_n": 1121,
+   "Reptiles": 1.5,
+   "Reptiles_n": 323
+  },
+  {
+   "bin": "1\u20133",
+   "All classes": 27.5,
+   "All classes_n": 4098,
+   "Birds": 12.6,
+   "Birds_n": 1463,
+   "Mammals": 44.3,
+   "Mammals_n": 1989,
+   "Reptiles": 9.5,
+   "Reptiles_n": 497
+  },
+  {
+   "bin": "3\u20135",
+   "All classes": 38.1,
+   "All classes_n": 3766,
+   "Birds": 21.5,
+   "Birds_n": 1207,
+   "Mammals": 52.7,
+   "Mammals_n": 2038,
+   "Reptiles": 20.9,
+   "Reptiles_n": 412
+  },
+  {
+   "bin": "5\u20138",
+   "All classes": 42.6,
+   "All classes_n": 4420,
+   "Birds": 23.6,
+   "Birds_n": 1617,
+   "Mammals": 61.1,
+   "Mammals_n": 2244,
+   "Reptiles": 24.1,
+   "Reptiles_n": 423
+  },
+  {
+   "bin": "8\u201312",
+   "All classes": 34.0,
+   "All classes_n": 3216,
+   "Birds": 23.1,
+   "Birds_n": 1687,
+   "Mammals": 52.4,
+   "Mammals_n": 1120,
+   "Reptiles": 26.6,
+   "Reptiles_n": 335
+  },
+  {
+   "bin": "12\u201320",
+   "All classes": 26.1,
+   "All classes_n": 3082,
+   "Birds": 23.1,
+   "Birds_n": 2285,
+   "Mammals": 39.3,
+   "Mammals_n": 410,
+   "Reptiles": 28.7,
+   "Reptiles_n": 341
+  },
+  {
+   "bin": "20\u201330",
+   "All classes": 27.8,
+   "All classes_n": 1708,
+   "Birds": 28.9,
+   "Birds_n": 1464,
+   "Mammals": 9.9,
+   "Mammals_n": 121,
+   "Reptiles": 29.5,
+   "Reptiles_n": 105
+  }
+ ],
+ "tumorBySpecies": [
+  {
+   "species": "Ferret",
+   "cls": "Mammals",
+   "n": 2474,
+   "pct": 59.2
+  },
+  {
+   "species": "Guinea Pig",
+   "cls": "Mammals",
+   "n": 1136,
+   "pct": 50.8
+  },
+  {
+   "species": "Hedgehog",
+   "cls": "Mammals",
+   "n": 456,
+   "pct": 48.7
+  },
+  {
+   "species": "Rabbit",
+   "cls": "Mammals",
+   "n": 2119,
+   "pct": 47.0
+  },
+  {
+   "species": "Budgerigar",
+   "cls": "Birds",
+   "n": 1078,
+   "pct": 41.2
+  },
+  {
+   "species": "Rat",
+   "cls": "Mammals",
+   "n": 1049,
+   "pct": 39.6
+  },
+  {
+   "species": "Chicken, Domestic",
+   "cls": "Birds",
+   "n": 395,
+   "pct": 34.7
+  },
+  {
+   "species": "Hamster",
+   "cls": "Mammals",
+   "n": 312,
+   "pct": 34.0
+  },
+  {
+   "species": "Cockatiel",
+   "cls": "Birds",
+   "n": 1839,
+   "pct": 32.8
+  },
+  {
+   "species": "Parakeet",
+   "cls": "Birds",
+   "n": 204,
+   "pct": 29.9
+  },
+  {
+   "species": "Lovebird",
+   "cls": "Birds",
+   "n": 318,
+   "pct": 29.6
+  },
+  {
+   "species": "Koi",
+   "cls": "Fish",
+   "n": 212,
+   "pct": 28.3
+  },
+  {
+   "species": "Amazon, Double Yellow Head",
+   "cls": "Birds",
+   "n": 161,
+   "pct": 26.1
+  },
+  {
+   "species": "Dragon, Bearded",
+   "cls": "Reptiles",
+   "n": 805,
+   "pct": 25.3
+  }
+ ],
+ "tumorEntities": [
+  {
+   "entity": "Lymphoma / leukemia",
+   "n": 1639
+  },
+  {
+   "entity": "Squamous cell carcinoma",
+   "n": 1252
+  },
+  {
+   "entity": "Adrenal neoplasia",
+   "n": 1195
+  },
+  {
+   "entity": "Lipoma / liposarcoma",
+   "n": 955
+  },
+  {
+   "entity": "Adenocarcinoma",
+   "n": 908
+  },
+  {
+   "entity": "Papilloma",
+   "n": 792
+  },
+  {
+   "entity": "Basal / trichoblastoma",
+   "n": 686
+  },
+  {
+   "entity": "Hemangioma / hemangiosarcoma",
+   "n": 602
+  },
+  {
+   "entity": "Fibrosarcoma",
+   "n": 493
+  },
+  {
+   "entity": "Sertoli / seminoma",
+   "n": 303
+  },
+  {
+   "entity": "Melanoma",
+   "n": 190
+  },
+  {
+   "entity": "Osteoma / osteosarcoma",
+   "n": 158
+  },
+  {
+   "entity": "Myxoma / myxosarcoma",
+   "n": 136
+  },
+  {
+   "entity": "Chromatophoroma family",
+   "n": 122
+  },
+  {
+   "entity": "Insulinoma",
+   "n": 9
+  }
+ ],
+ "associations": [
+  {
+   "cls": "Birds",
+   "species": "Budgerigar",
+   "condition": "Pituitary tumor",
+   "cases": 27,
+   "pct": 1.3,
+   "ratio": 74.3
+  },
+  {
+   "cls": "Mammals",
+   "species": "Mouse",
+   "condition": "Cryptosporidiosis",
+   "cases": 23,
+   "pct": 6.6,
+   "ratio": 44.3
+  },
+  {
+   "cls": "Birds",
+   "species": "Finch, Gouldian",
+   "condition": "Cryptosporidiosis",
+   "cases": 27,
+   "pct": 10.8,
+   "ratio": 38.7
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Dragon, Bearded",
+   "condition": "Adenovirus",
+   "cases": 13,
+   "pct": 1.1,
+   "ratio": 35.1
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Boa",
+   "condition": "Inclusion body disease",
+   "cases": 33,
+   "pct": 14.8,
+   "ratio": 28.1
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Boa, Red Tail",
+   "condition": "Inclusion body disease",
+   "cases": 35,
+   "pct": 13.8,
+   "ratio": 27.4
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Gecko, Leopard",
+   "condition": "Xanthomatosis",
+   "cases": 25,
+   "pct": 9.7,
+   "ratio": 20.9
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Dragon, Bearded",
+   "condition": "Nannizziopsis (CANV)",
+   "cases": 27,
+   "pct": 2.2,
+   "ratio": 20.8
+  },
+  {
+   "cls": "Mammals",
+   "species": "Rat",
+   "condition": "Pituitary tumor",
+   "cases": 12,
+   "pct": 0.8,
+   "ratio": 16.6
+  },
+  {
+   "cls": "Reptiles",
+   "species": "Gecko, Leopard",
+   "condition": "Cryptosporidiosis",
+   "cases": 59,
+   "pct": 22.9,
+   "ratio": 15.2
+  },
+  {
+   "cls": "Birds",
+   "species": "Chicken, Domestic",
+   "condition": "Lymphoma",
+   "cases": 71,
+   "pct": 11.9,
+   "ratio": 14.4
+  },
+  {
+   "cls": "Birds",
+   "species": "Budgerigar",
+   "condition": "Renal tumor",
+   "cases": 17,
+   "pct": 0.8,
+   "ratio": 13.4
+  },
+  {
+   "cls": "Mammals",
+   "species": "Ferret",
+   "condition": "Adrenal disease/neoplasia",
+   "cases": 1839,
+   "pct": 30.6,
+   "ratio": 11.9
+  },
+  {
+   "cls": "Birds",
+   "species": "Budgerigar",
+   "condition": "Macrorhabdus (gastric yeast)",
+   "cases": 190,
+   "pct": 9.3,
+   "ratio": 10.5
+  },
+  {
+   "cls": "Mammals",
+   "species": "Rabbit",
+   "condition": "Uterine adenocarcinoma",
+   "cases": 182,
+   "pct": 4.9,
+   "ratio": 10.5
+  },
+  {
+   "cls": "Mammals",
+   "species": "Hedgehog",
+   "condition": "Squamous cell carcinoma",
+   "cases": 89,
+   "pct": 11.3,
+   "ratio": 10.2
+  },
+  {
+   "cls": "Birds",
+   "species": "Amazon, Yellow Nape",
+   "condition": "Bile duct carcinoma",
+   "cases": 10,
+   "pct": 2.1,
+   "ratio": 9.1
+  },
+  {
+   "cls": "Birds",
+   "species": "Macaw, Greenwing",
+   "condition": "Cloacal papillomatosis",
+   "cases": 45,
+   "pct": 9.3,
+   "ratio": 8.8
+  }
+ ],
+ "bodySystems": {
+  "systems": [
+   "Skin",
+   "Digestive",
+   "Systemic",
+   "Respiratory",
+   "Urinary",
+   "Reproductive",
+   "MusculoSkeletal",
+   "CardioVascular",
+   "HemeLymph",
+   "Endocrine"
+  ],
+  "rows": [
+   {
+    "cls": "Birds",
+    "n": 17187,
+    "Skin": 20.3,
+    "Digestive": 26.7,
+    "Systemic": 13.8,
+    "Respiratory": 10.2,
+    "Urinary": 5.6,
+    "Reproductive": 4.9,
+    "MusculoSkeletal": 3.4,
+    "CardioVascular": 4.3,
+    "HemeLymph": 0.0,
+    "Endocrine": 0.8
+   },
+   {
+    "cls": "Mammals",
+    "n": 11594,
+    "Skin": 31.9,
+    "Digestive": 17.1,
+    "Systemic": 8.2,
+    "Respiratory": 8.6,
+    "Urinary": 5.1,
+    "Reproductive": 7.1,
+    "MusculoSkeletal": 3.5,
+    "CardioVascular": 2.4,
+    "HemeLymph": 0.0,
+    "Endocrine": 6.5
+   },
+   {
+    "cls": "Reptiles",
+    "n": 4655,
+    "Skin": 21.2,
+    "Digestive": 29.0,
+    "Systemic": 17.3,
+    "Respiratory": 5.4,
+    "Urinary": 6.1,
+    "Reproductive": 3.7,
+    "MusculoSkeletal": 7.9,
+    "CardioVascular": 1.4,
+    "HemeLymph": 0.2,
+    "Endocrine": 0.5
+   },
+   {
+    "cls": "Fish",
+    "n": 1911,
+    "Skin": 18.8,
+    "Digestive": 17.8,
+    "Systemic": 17.9,
+    "Respiratory": 7.8,
+    "Urinary": 7.0,
+    "Reproductive": 2.2,
+    "MusculoSkeletal": 4.9,
+    "CardioVascular": 2.0,
+    "HemeLymph": 0.1,
+    "Endocrine": 0.6
+   },
+   {
+    "cls": "Amphibians",
+    "n": 1154,
+    "Skin": 18.3,
+    "Digestive": 24.9,
+    "Systemic": 21.1,
+    "Respiratory": 3.1,
+    "Urinary": 14.6,
+    "Reproductive": 0.5,
+    "MusculoSkeletal": 4.0,
+    "CardioVascular": 1.4,
+    "HemeLymph": 0.3,
+    "Endocrine": 0.2
+   }
+  ]
+ },
+ "totals": {
+  "records": 84190,
+  "classified_process": 36258,
+  "with_age": 45946
+ }
+}

@@ -266,13 +266,20 @@ export default async function LandingPage() {
             companion animals — birds, reptiles, small mammals, amphibians, and
             fish — searchable in one place.
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/explore"
               className="inline-flex items-center gap-2 rounded-lg px-7 py-3 text-base font-bold"
               style={{ background: "var(--ucd-gold)", color: "var(--ucd-blue)" }}
             >
               Search the database →
+            </Link>
+            <Link
+              href="/epidemiology"
+              className="inline-flex items-center gap-2 rounded-lg border px-7 py-3 text-base font-bold text-white"
+              style={{ borderColor: "rgba(255,255,255,0.45)" }}
+            >
+              Explore epidemiology of diseases in exotics
             </Link>
           </div>
         </div>
@@ -399,13 +406,22 @@ export default async function LandingPage() {
             </section>
 
             <section className="mt-10 text-center">
-              <Link
-                href="/explore"
-                className="inline-flex items-center gap-2 rounded-lg px-7 py-3 text-base font-bold"
-                style={{ background: "var(--ucd-blue)", color: "#ffffff" }}
-              >
-                Search {fmtInt(stats.total)} records →
-              </Link>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center gap-2 rounded-lg px-7 py-3 text-base font-bold"
+                  style={{ background: "var(--ucd-blue)", color: "#ffffff" }}
+                >
+                  Search {fmtInt(stats.total)} records →
+                </Link>
+                <Link
+                  href="/epidemiology"
+                  className="inline-flex items-center gap-2 rounded-lg border px-7 py-3 text-base font-bold"
+                  style={{ borderColor: "var(--ucd-blue)", color: "var(--ink)" }}
+                >
+                  Explore disease epidemiology
+                </Link>
+              </div>
               <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
                 Full-text diagnosis search · filters by taxon, species, sex, age,
                 organ count, body system, and disease process · charts · CSV export
