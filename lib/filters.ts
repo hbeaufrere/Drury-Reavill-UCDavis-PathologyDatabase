@@ -75,6 +75,21 @@ export interface FilterSpec {
   facets: Partial<Record<(typeof FACET_COLUMNS)[number], string[]>>;
   ageMin: number | null;
   ageMax: number | null;
+  tissuesMin: number | null;
+  tissuesMax: number | null;
+}
+
+// True when the request narrows the dataset at all — the public CSV export
+// requires an actual search, never a full-table dump.
+export function hasActiveFilters(f: FilterSpec): boolean {
+  return (
+    f.q.trim().length > 0 ||
+    Object.values(f.facets).some((v) => v && v.length > 0) ||
+    f.ageMin !== null ||
+    f.ageMax !== null ||
+    f.tissuesMin !== null ||
+    f.tissuesMax !== null
+  );
 }
 
 export function parseFilters(params: URLSearchParams, admin = false): FilterSpec {
@@ -106,6 +121,8 @@ export function parseFilters(params: URLSearchParams, admin = false): FilterSpec
     facets,
     ageMin: num("age_min"),
     ageMax: num("age_max"),
+    tissuesMin: num("tissues_min"),
+    tissuesMax: num("tissues_max"),
   };
 }
 
@@ -145,6 +162,13 @@ export function buildWhere(f: FilterSpec): WhereClause {
     const lo = f.ageMin ?? 0;
     const hi = f.ageMax ?? 1000;
     conds.push(`(age IS NULL OR age BETWEEN ${bind(lo)} AND ${bind(hi)})`);
+  }
+
+  // Organ/tissue count filter (used to separate biopsies from necropsies).
+  if (f.tissuesMin !== null || f.tissuesMax !== null) {
+    const lo = f.tissuesMin ?? 0;
+    const hi = f.tissuesMax ?? 10000;
+    conds.push(`tissues BETWEEN ${bind(lo)} AND ${bind(hi)}`);
   }
 
   return { sql: conds.join(" AND "), params };

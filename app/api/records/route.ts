@@ -5,7 +5,7 @@ import { buildWhere, parseFilters, visibleColumns } from "@/lib/filters";
 
 export const dynamic = "force-dynamic";
 
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 200;
 
 export async function GET(req: NextRequest) {
   if (!dbConfigured()) {

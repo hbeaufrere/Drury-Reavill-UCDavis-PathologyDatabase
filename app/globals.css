@@ -25,6 +25,16 @@
   --seq-400: #3987e5;
   --seq-550: #1c5cab;
   --seq-700: #0d366b;
+  /* UC Davis brand */
+  --ucd-blue: #022851;
+  --ucd-gold: #ffbf00;
+  /* Taxonomic-class chart palette (validated light set) */
+  --cls-1: #0047ba;
+  --cls-2: #da9c00;
+  --cls-3: #2e93be;
+  --cls-4: #2e7d46;
+  --cls-5: #c6007e;
+  --cls-6: #d9622b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +58,13 @@
     --series-6: #008300;
     --series-7: #9085e9;
     --series-8: #e66767;
+    /* Taxonomic-class chart palette (validated dark set) */
+    --cls-1: #3b6fd4;
+    --cls-2: #b98500;
+    --cls-3: #3e9fc9;
+    --cls-4: #3e9a5c;
+    --cls-5: #e04a9e;
+    --cls-6: #e07038;
   }
 }
 
