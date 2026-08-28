@@ -59,8 +59,13 @@ export default function ExplorePage() {
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [dlError, setDlError] = useState<string | null>(null);
-  const pageSize = 50;
+  const [pageSize, setPageSize] = useState(50);
   const abortRef = useRef<AbortController | null>(null);
+
+  const onPageSize = (n: number) => {
+    setPageSize(n);
+    setPage(1);
+  };
 
   useEffect(() => {
     try {
@@ -139,7 +144,7 @@ export default function ExplorePage() {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [filters, page, sort]);
+  }, [filters, page, pageSize, sort]);
 
   const onFilters = useCallback((next: ExplorerFilters) => {
     setFilters(next);
@@ -379,6 +384,7 @@ export default function ExplorePage() {
                     pageSize={pageSize}
                     total={total}
                     onPage={setPage}
+                    onPageSize={onPageSize}
                     loading={loading}
                   />
                 ) : (
