@@ -30,7 +30,6 @@ interface Stats {
   mainTotal: number;
   cytoTotal: number;
   species: number;
-  tumors: number;
   classes: ClassStat[];
   classified: number;
   unclassified: number;
@@ -41,15 +40,12 @@ interface Stats {
 async function loadStats(): Promise<Stats | null> {
   if (!dbConfigured()) return null;
   try {
-    const [totals, distincts, tumors, cats, systems, lesions] = await Promise.all([
+    const [totals, distincts, cats, systems, lesions] = await Promise.all([
       query<{ dataset: string; n: string }>(
         `SELECT dataset, count(*)::text AS n FROM records GROUP BY dataset`
       ),
       query<{ species: string }>(
         `SELECT count(DISTINCT breed)::text AS species FROM records`
-      ),
-      query<{ n: string }>(
-        `SELECT count(*)::text AS n FROM records WHERE specific_lesions = 'Tumor'`
       ),
       query<{ value: string; n: string }>(
         `SELECT category AS value, count(*)::text AS n FROM records
@@ -101,7 +97,6 @@ async function loadStats(): Promise<Stats | null> {
       mainTotal,
       cytoTotal,
       species: Number(distincts[0].species),
-      tumors: Number(tumors[0].n),
       classes,
       classified,
       unclassified: total - classified,
@@ -296,13 +291,12 @@ export default async function LandingPage() {
           <>
             <section
               aria-label="Headline statistics"
-              className="mt-[-2rem] grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+              className="mt-[-2rem] grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4"
             >
               <StatTile value={fmtInt(stats.total)} caption="Case records" />
               <StatTile value={fmtInt(stats.mainTotal)} caption="Pathology reports" />
               <StatTile value={fmtInt(stats.cytoTotal)} caption="Cytology cases" />
               <StatTile value={fmtInt(stats.species)} caption="Species &amp; breeds" />
-              <StatTile value={fmtInt(stats.tumors)} caption="Tumor diagnoses" />
             </section>
 
             {/* Class-level donut + legend */}
