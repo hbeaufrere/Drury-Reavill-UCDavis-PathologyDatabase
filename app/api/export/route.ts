@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
+import { isValidCode } from "@/lib/codes";
 import { dbConfigured, query, type Row } from "@/lib/db";
-import { buildWhere, parseFilters, visibleColumns } from "@/lib/filters";
+import {
+  buildWhere,
+  hasActiveFilters,
+  parseFilters,
+  visibleColumns,
+} from "@/lib/filters";
 
 export const dynamic = "force-dynamic";
 
 const CHUNK = 5000;
+const PUBLIC_EXPORT_LIMIT = 1000;
+const CONTACT =
+  "For larger extracts, email hbeaufrere@ucdavis.edu with the purpose of your request and how the data will be used.";
 
 function csvField(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -21,6 +30,31 @@ export async function GET(req: NextRequest) {
   const cols = visibleColumns(admin);
   const filters = parseFilters(req.nextUrl.searchParams, admin);
   const where = buildWhere(filters);
+
+  // Public downloads require an actual search and a result set under the
+  // limit. The admin is exempt, as is anyone with a valid download access
+  // code issued by the admin. Enforced here so the UI can't be bypassed.
+  const accessCode = req.nextUrl.searchParams.get("code") ?? "";
+  const privileged = admin || (await isValidCode(accessCode).catch(() => false));
+  if (!privileged) {
+    if (!hasActiveFilters(filters)) {
+      return NextResponse.json(
+        { error: `Downloads are only available for search results. Apply a search or filter first. ${CONTACT}` },
+        { status: 403 }
+      );
+    }
+    const count = await query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM records WHERE ${where.sql}`,
+      where.params
+    );
+    if (Number(count[0].n) > PUBLIC_EXPORT_LIMIT) {
+      return NextResponse.json(
+        { error: `This search matches ${Number(count[0].n).toLocaleString("en-US")} records; downloads are limited to ${PUBLIC_EXPORT_LIMIT.toLocaleString("en-US")}. Narrow your search. ${CONTACT}` },
+        { status: 403 }
+      );
+    }
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({

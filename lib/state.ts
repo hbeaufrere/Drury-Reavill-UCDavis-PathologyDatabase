@@ -7,6 +7,8 @@ export interface ExplorerFilters {
   facets: Record<string, string[]>;
   ageMin: string;
   ageMax: string;
+  tissuesMin: string;
+  tissuesMax: string;
 }
 
 export const EMPTY_FILTERS: ExplorerFilters = {
@@ -16,6 +18,8 @@ export const EMPTY_FILTERS: ExplorerFilters = {
   facets: {},
   ageMin: "",
   ageMax: "",
+  tissuesMin: "",
+  tissuesMax: "",
 };
 
 // Serializes the filter state into the query string shared by the
@@ -30,6 +34,8 @@ export function filterParams(f: ExplorerFilters): URLSearchParams {
   }
   if (f.ageMin !== "") p.set("age_min", f.ageMin);
   if (f.ageMax !== "") p.set("age_max", f.ageMax);
+  if (f.tissuesMin !== "") p.set("tissues_min", f.tissuesMin);
+  if (f.tissuesMax !== "") p.set("tissues_max", f.tissuesMax);
   return p;
 }
 
@@ -38,5 +44,6 @@ export function activeFilterCount(f: ExplorerFilters): number {
   if (f.q.trim()) n++;
   for (const v of Object.values(f.facets)) if (v.length) n++;
   if (f.ageMin !== "" || f.ageMax !== "") n++;
+  if (f.tissuesMin !== "" || f.tissuesMax !== "") n++;
   return n;
 }

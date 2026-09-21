@@ -8,6 +8,8 @@ export interface Sort {
   dir: "asc" | "desc";
 }
 
+const PAGE_SIZES = [25, 50, 100, 200];
+
 export default function DataTable({
   rows,
   columns,
@@ -17,6 +19,7 @@ export default function DataTable({
   pageSize,
   total,
   onPage,
+  onPageSize,
   loading,
 }: {
   rows: Record<string, unknown>[];
@@ -27,6 +30,7 @@ export default function DataTable({
   pageSize: number;
   total: number;
   onPage: (p: number) => void;
+  onPageSize: (n: number) => void;
   loading: boolean;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -35,7 +39,15 @@ export default function DataTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="table-wrap" style={{ maxHeight: "34rem", opacity: loading ? 0.6 : 1 }}>
+      <div
+        className="table-wrap"
+        style={{
+          // Fill the rest of the viewport (header + toolbar + pagination
+          // take ~19rem) but never collapse below a usable height.
+          maxHeight: "max(24rem, calc(100vh - 19rem))",
+          opacity: loading ? 0.6 : 1,
+        }}
+      >
         <table className="data">
           <thead>
             <tr>
@@ -82,9 +94,26 @@ export default function DataTable({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span style={{ color: "var(--ink-2)" }}>
-          Showing <b className="tabular">{fmtInt(from)}–{fmtInt(to)}</b> of{" "}
-          <b className="tabular">{fmtInt(total)}</b> rows
+        <span className="flex flex-wrap items-center gap-4" style={{ color: "var(--ink-2)" }}>
+          <span>
+            Showing <b className="tabular">{fmtInt(from)}–{fmtInt(to)}</b> of{" "}
+            <b className="tabular">{fmtInt(total)}</b> rows
+          </span>
+          <label className="flex items-center gap-1.5">
+            Rows per page
+            <select
+              className="input"
+              style={{ width: "auto", padding: "0.25rem 0.5rem" }}
+              value={pageSize}
+              onChange={(e) => onPageSize(Number(e.target.value))}
+            >
+              {PAGE_SIZES.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
         </span>
         <span className="inline-flex items-center gap-1">
           <button className="btn" disabled={page <= 1} onClick={() => onPage(1)}>

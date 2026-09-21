@@ -125,6 +125,35 @@ export default function FilterPanel({
           Rows with unknown age are always kept.
         </p>
       </div>
+
+      <div>
+        <div className="mb-1 text-xs font-medium" style={{ color: "var(--ink-2)" }}>
+          {label("tissues")}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            className="input"
+            type="number"
+            min={0}
+            placeholder="min"
+            value={filters.tissuesMin}
+            onChange={(e) => set({ tissuesMin: e.target.value })}
+          />
+          <span style={{ color: "var(--muted)" }}>–</span>
+          <input
+            className="input"
+            type="number"
+            min={0}
+            placeholder="max"
+            value={filters.tissuesMax}
+            onChange={(e) => set({ tissuesMax: e.target.value })}
+          />
+        </div>
+        <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+          Number of organs submitted — low counts are typically biopsies, high
+          counts necropsies.
+        </p>
+      </div>
     </div>
   );
 }
