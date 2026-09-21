@@ -11,6 +11,21 @@ interface DownloadCode {
   revoked: boolean;
 }
 
+interface VisitStats {
+  total: number;
+  byYear: { year: number; n: number }[];
+  byCountry: { country: string; total: number; years: Record<string, number> }[];
+}
+
+function countryName(code: string): string {
+  if (code === "Unknown") return "Unknown";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"unknown" | "in" | "out">("unknown");
@@ -18,6 +33,8 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
 
   const [codes, setCodes] = useState<DownloadCode[] | null>(null);
+  const [visits, setVisits] = useState<VisitStats | null>(null);
+  const [visitsError, setVisitsError] = useState<string | null>(null);
   const [codesError, setCodesError] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [expiresDays, setExpiresDays] = useState("");
@@ -33,6 +50,15 @@ export default function AdminPage() {
       setCodesError(null);
     } catch (e) {
       setCodesError(e instanceof Error ? e.message : "Failed to load codes");
+    }
+    try {
+      const r = await fetch("/api/admin/visits");
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ?? "Failed to load visit stats");
+      setVisits(j);
+      setVisitsError(null);
+    } catch (e) {
+      setVisitsError(e instanceof Error ? e.message : "Failed to load visit stats");
     }
   }, []);
 
@@ -277,6 +303,88 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      )}
+
+      {status === "in" && (
+        <div className="card mt-6 p-8">
+          <h2 className="mb-1 text-base font-bold">Visits</h2>
+          <p className="mb-5 text-sm" style={{ color: "var(--ink-2)" }}>
+            One visit is counted per browser session. Your own admin sessions
+            and known bots are excluded; only the day and country of each
+            visit are stored, never anything identifying.
+          </p>
+
+          {visitsError ? (
+            <p className="text-sm" style={{ color: "var(--series-8)" }}>
+              {visitsError}
+            </p>
+          ) : visits === null ? (
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              Loading…
+            </p>
+          ) : visits.total === 0 ? (
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              No visits recorded yet.
+            </p>
+          ) : (
+            <>
+              <div className="mb-6 flex flex-wrap gap-3">
+                <div
+                  className="rounded-lg px-5 py-3"
+                  style={{ border: "1px solid var(--baseline)", borderTop: "3px solid var(--ucd-gold)" }}
+                >
+                  <div className="text-2xl font-bold">{visits.total.toLocaleString()}</div>
+                  <div className="text-xs" style={{ color: "var(--ink-2)" }}>
+                    Total visits
+                  </div>
+                </div>
+                {visits.byYear.map((y) => (
+                  <div
+                    key={y.year}
+                    className="rounded-lg px-5 py-3"
+                    style={{ border: "1px solid var(--baseline)" }}
+                  >
+                    <div className="text-2xl font-bold">{y.n.toLocaleString()}</div>
+                    <div className="text-xs" style={{ color: "var(--ink-2)" }}>
+                      {y.year}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="table-wrap">
+                <table className="data">
+                  <thead>
+                    <tr>
+                      <th style={{ cursor: "default" }}>Country</th>
+                      {visits.byYear.map((y) => (
+                        <th key={y.year} style={{ cursor: "default", textAlign: "right" }}>
+                          {y.year}
+                        </th>
+                      ))}
+                      <th style={{ cursor: "default", textAlign: "right" }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visits.byCountry.map((c) => (
+                      <tr key={c.country}>
+                        <td className="font-medium">{countryName(c.country)}</td>
+                        {visits.byYear.map((y) => (
+                          <td key={y.year} className="tabular" style={{ textAlign: "right" }}>
+                            {(c.years[String(y.year)] ?? 0).toLocaleString() || "—"}
+                          </td>
+                        ))}
+                        <td className="tabular font-semibold" style={{ textAlign: "right" }}>
+                          {c.total.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
