@@ -6,6 +6,7 @@ import {
   buildWhere,
   hasActiveFilters,
   parseFilters,
+  selectList,
   visibleColumns,
 } from "@/lib/filters";
 
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   const admin = isAdmin(req);
   const cols = visibleColumns(admin);
   const filters = parseFilters(req.nextUrl.searchParams, admin);
-  const where = buildWhere(filters);
+  const where = buildWhere(filters, admin);
 
   // Public downloads require an actual search and a result set under the
   // limit. The admin is exempt, as is anyone with a valid download access
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
         for (;;) {
           const p = [...where.params, lastId];
           const rows = await query<Row & { id: number }>(
-            `SELECT id, ${cols.join(", ")} FROM records
+            `SELECT id, ${selectList(admin)} FROM records
              WHERE ${where.sql} AND id > $${p.length}
              ORDER BY id LIMIT ${CHUNK}`,
             p

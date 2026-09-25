@@ -17,8 +17,11 @@ Built with **Next.js** (deployed on Vercel) and **Neon Postgres**.
 - **Data summary** — per-column completeness and statistics
 - **CSV export** of any filtered result set
 - **Anonymized by default** — patient names are stored in the database but
-  never returned to public visitors; signing in at `/admin` with the admin
-  password reveals them (there is no clinic-name column in the source data)
+  never returned to public visitors, and the public copy of the report text
+  is scrubbed at seed time (patient/owner names, veterinarian names,
+  facility names, accession numbers, phones, emails replaced by
+  placeholders such as `[patient]`). The full text lives in
+  `diagnosis_admin` and is only served to the admin session.
 
 ## Architecture
 

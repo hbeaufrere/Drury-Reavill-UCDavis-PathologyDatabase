@@ -21,8 +21,8 @@ if (!url) {
 
 const COLS = [
   "dataset", "animal_name", "category", "breed", "sex", "age", "age_text",
-  "diagnosis", "tissues", "stains", "stains_charge", "charge_type",
-  "diagnosis_category", "specific_lesions",
+  "diagnosis", "diagnosis_admin", "tissues", "stains", "stains_charge",
+  "charge_type", "diagnosis_category", "specific_lesions",
 ];
 
 async function* readRows(file) {
@@ -52,6 +52,7 @@ await client.query(`
     age                real,
     age_text           text,
     diagnosis          text,
+    diagnosis_admin    text,
     tissues            integer,
     stains             text,
     stains_charge      real,
