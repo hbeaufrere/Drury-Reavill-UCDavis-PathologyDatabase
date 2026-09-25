@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
 import { dbConfigured, query } from "@/lib/db";
-import { DATASETS, Dataset, NUMERIC_COLUMNS, visibleColumns } from "@/lib/filters";
+import {
+  DATASETS,
+  Dataset,
+  NUMERIC_COLUMNS,
+  physicalColumn,
+  visibleColumns,
+} from "@/lib/filters";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +15,14 @@ export async function GET(req: NextRequest) {
   if (!dbConfigured()) {
     return NextResponse.json({ error: "DATABASE_URL is not configured" }, { status: 503 });
   }
-  const ALL_COLUMNS = visibleColumns(isAdmin(req));
+  const admin = isAdmin(req);
+  const ALL_COLUMNS = visibleColumns(admin);
   const ds = req.nextUrl.searchParams.get("dataset");
   const dataset: Dataset = DATASETS.includes(ds as Dataset) ? (ds as Dataset) : "main";
 
   const pieces = ALL_COLUMNS.map(
     (c) =>
-      `count(${c})::text AS "${c}__nonnull", count(DISTINCT ${c})::text AS "${c}__distinct"`
+      `count(${physicalColumn(c, admin)})::text AS "${c}__nonnull", count(DISTINCT ${physicalColumn(c, admin)})::text AS "${c}__distinct"`
   ).join(", ");
   const numPieces = NUMERIC_COLUMNS.map(
     (c) =>

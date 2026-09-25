@@ -50,6 +50,19 @@ export function searchableColumns(admin: boolean): string[] {
     : TEXT_COLUMNS.filter((c) => !RESTRICTED_COLUMNS.includes(c));
 }
 
+// The public `diagnosis` column holds the redacted report text; the full
+// unredacted text lives in `diagnosis_admin` and is only ever read for the
+// admin session. Both are exposed under the logical name "diagnosis".
+export function physicalColumn(col: string, admin: boolean): string {
+  return col === "diagnosis" && admin ? "diagnosis_admin" : col;
+}
+
+export function selectList(admin: boolean): string {
+  return visibleColumns(admin)
+    .map((c) => (c === "diagnosis" && admin ? "diagnosis_admin AS diagnosis" : c))
+    .join(", ");
+}
+
 // Mirrors the original Streamlit behavior: "and" between all terms wins,
 // otherwise "or"; a comma list means "or"; a plain string is one term.
 export function parseSearchQuery(raw: string): { mode: "and" | "or"; terms: string[] } {
@@ -131,7 +144,7 @@ export interface WhereClause {
   params: unknown[];
 }
 
-export function buildWhere(f: FilterSpec): WhereClause {
+export function buildWhere(f: FilterSpec, admin = false): WhereClause {
   const conds: string[] = [];
   const params: unknown[] = [];
   const bind = (v: unknown) => {
@@ -145,7 +158,7 @@ export function buildWhere(f: FilterSpec): WhereClause {
   if (terms.length && f.searchCols.length) {
     const termConds = terms.map((t) => {
       const p = bind(`%${escapeLike(t)}%`);
-      const perCol = f.searchCols.map((c) => `${c} ILIKE ${p}`);
+      const perCol = f.searchCols.map((c) => `${physicalColumn(c, admin)} ILIKE ${p}`);
       return `(${perCol.join(" OR ")})`;
     });
     conds.push(`(${termConds.join(mode === "and" ? " AND " : " OR ")})`);

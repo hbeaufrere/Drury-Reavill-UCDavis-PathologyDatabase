@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
 import { dbConfigured, query } from "@/lib/db";
-import { buildWhere, parseFilters, visibleColumns } from "@/lib/filters";
+import {
+  buildWhere,
+  parseFilters,
+  physicalColumn,
+  selectList,
+  visibleColumns,
+} from "@/lib/filters";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +21,7 @@ export async function GET(req: NextRequest) {
   const cols = visibleColumns(admin);
   const sp = req.nextUrl.searchParams;
   const filters = parseFilters(sp, admin);
-  const where = buildWhere(filters);
+  const where = buildWhere(filters, admin);
 
   const page = Math.max(1, Number(sp.get("page")) || 1);
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(sp.get("pageSize")) || 50));
@@ -24,7 +30,7 @@ export async function GET(req: NextRequest) {
   const sortDir = sp.get("dir") === "desc" ? "DESC" : "ASC";
   const orderBy =
     sortCol && cols.includes(sortCol)
-      ? `${sortCol} ${sortDir} NULLS LAST, id`
+      ? `${physicalColumn(sortCol, admin)} ${sortDir} NULLS LAST, id`
       : "id";
 
   const countP = query<{ n: string }>(
@@ -32,7 +38,7 @@ export async function GET(req: NextRequest) {
     where.params
   );
   const rowsP = query(
-    `SELECT id, ${cols.join(", ")} FROM records
+    `SELECT id, ${selectList(admin)} FROM records
      WHERE ${where.sql}
      ORDER BY ${orderBy}
      LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,

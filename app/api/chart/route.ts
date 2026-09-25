@@ -5,6 +5,7 @@ import {
   NUMERIC_COLUMNS,
   buildWhere,
   parseFilters,
+  physicalColumn,
   searchableColumns,
 } from "@/lib/filters";
 
@@ -20,9 +21,10 @@ export async function GET(req: NextRequest) {
   const admin = isAdmin(req);
   const textCols = searchableColumns(admin);
   const isText = (c: string | null): c is string => !!c && textCols.includes(c);
+  const phys = (c: string) => physicalColumn(c, admin);
   const sp = req.nextUrl.searchParams;
   const filters = parseFilters(sp, admin);
-  const where = buildWhere(filters);
+  const where = buildWhere(filters, admin);
   const type = sp.get("type");
   const topN = Math.min(50, Math.max(2, Number(sp.get("topN")) || 20));
 
@@ -33,9 +35,9 @@ export async function GET(req: NextRequest) {
         const x = sp.get("x");
         if (!isText(x)) return badRequest("x must be a text column");
         const rows = await query<{ value: string | null; n: string }>(
-          `SELECT ${x} AS value, count(*)::text AS n
-           FROM records WHERE ${where.sql} AND ${x} IS NOT NULL
-           GROUP BY ${x} ORDER BY count(*) DESC, ${x} LIMIT ${topN}`,
+          `SELECT ${phys(x)} AS value, count(*)::text AS n
+           FROM records WHERE ${where.sql} AND ${phys(x)} IS NOT NULL
+           GROUP BY ${phys(x)} ORDER BY count(*) DESC, ${phys(x)} LIMIT ${topN}`,
           where.params
         );
         return NextResponse.json({
@@ -48,8 +50,8 @@ export async function GET(req: NextRequest) {
         const bins = Math.min(200, Math.max(5, Number(sp.get("bins")) || 40));
         if (!isNumeric(x)) return badRequest("x must be a numeric column");
         const stats = await query<{ lo: number | null; hi: number | null }>(
-          `SELECT min(${x})::float8 AS lo, max(${x})::float8 AS hi
-           FROM records WHERE ${where.sql} AND ${x} IS NOT NULL`,
+          `SELECT min(${phys(x)})::float8 AS lo, max(${phys(x)})::float8 AS hi
+           FROM records WHERE ${where.sql} AND ${phys(x)} IS NOT NULL`,
           where.params
         );
         const { lo, hi } = stats[0];
@@ -58,9 +60,9 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ data: [{ x0: lo, x1: hi, count: 1 }] });
         }
         const rows = await query<{ bucket: number; n: string }>(
-          `SELECT width_bucket(${x}, $${where.params.length + 1}, $${where.params.length + 2}, ${bins}) AS bucket,
+          `SELECT width_bucket(${phys(x)}, $${where.params.length + 1}, $${where.params.length + 2}, ${bins}) AS bucket,
                   count(*)::text AS n
-           FROM records WHERE ${where.sql} AND ${x} IS NOT NULL
+           FROM records WHERE ${where.sql} AND ${phys(x)} IS NOT NULL
            GROUP BY bucket ORDER BY bucket`,
           [...where.params, lo, hi]
         );
@@ -87,19 +89,19 @@ export async function GET(req: NextRequest) {
           min: number; q1: number; median: number; q3: number; max: number;
         }>(
           `WITH top_groups AS (
-             SELECT ${x} AS g FROM records
-             WHERE ${where.sql} AND ${x} IS NOT NULL AND ${y} IS NOT NULL
-             GROUP BY ${x} ORDER BY count(*) DESC LIMIT ${topN}
+             SELECT ${phys(x)} AS g FROM records
+             WHERE ${where.sql} AND ${phys(x)} IS NOT NULL AND ${phys(y)} IS NOT NULL
+             GROUP BY ${phys(x)} ORDER BY count(*) DESC LIMIT ${topN}
            )
-           SELECT ${x} AS group, count(*)::text AS n,
-                  min(${y})::float8 AS min,
-                  percentile_cont(0.25) WITHIN GROUP (ORDER BY ${y})::float8 AS q1,
-                  percentile_cont(0.5)  WITHIN GROUP (ORDER BY ${y})::float8 AS median,
-                  percentile_cont(0.75) WITHIN GROUP (ORDER BY ${y})::float8 AS q3,
-                  max(${y})::float8 AS max
+           SELECT ${phys(x)} AS group, count(*)::text AS n,
+                  min(${phys(y)})::float8 AS min,
+                  percentile_cont(0.25) WITHIN GROUP (ORDER BY ${phys(y)})::float8 AS q1,
+                  percentile_cont(0.5)  WITHIN GROUP (ORDER BY ${phys(y)})::float8 AS median,
+                  percentile_cont(0.75) WITHIN GROUP (ORDER BY ${phys(y)})::float8 AS q3,
+                  max(${phys(y)})::float8 AS max
            FROM records
-           WHERE ${where.sql} AND ${x} IN (SELECT g FROM top_groups) AND ${y} IS NOT NULL
-           GROUP BY ${x} ORDER BY count(*) DESC`,
+           WHERE ${where.sql} AND ${phys(x)} IN (SELECT g FROM top_groups) AND ${phys(y)} IS NOT NULL
+           GROUP BY ${phys(x)} ORDER BY count(*) DESC`,
           where.params
         );
         return NextResponse.json({
@@ -114,9 +116,9 @@ export async function GET(req: NextRequest) {
           return badRequest("x and y must be numeric columns");
         }
         const rows = await query<{ x: number; y: number }>(
-          `SELECT ${x}::float8 AS x, ${y}::float8 AS y
+          `SELECT ${phys(x)}::float8 AS x, ${phys(y)}::float8 AS y
            FROM records
-           WHERE ${where.sql} AND ${x} IS NOT NULL AND ${y} IS NOT NULL
+           WHERE ${where.sql} AND ${phys(x)} IS NOT NULL AND ${phys(y)} IS NOT NULL
            ORDER BY md5(id::text) LIMIT 3000`,
           where.params
         );
@@ -132,17 +134,17 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(30, topN);
         const rows = await query<{ xv: string; yv: string; n: string }>(
           `WITH tx AS (
-             SELECT ${x} AS v FROM records WHERE ${where.sql} AND ${x} IS NOT NULL
-             GROUP BY ${x} ORDER BY count(*) DESC LIMIT ${limit}
+             SELECT ${phys(x)} AS v FROM records WHERE ${where.sql} AND ${phys(x)} IS NOT NULL
+             GROUP BY ${phys(x)} ORDER BY count(*) DESC LIMIT ${limit}
            ), ty AS (
-             SELECT ${y} AS v FROM records WHERE ${where.sql} AND ${y} IS NOT NULL
-             GROUP BY ${y} ORDER BY count(*) DESC LIMIT ${limit}
+             SELECT ${phys(y)} AS v FROM records WHERE ${where.sql} AND ${phys(y)} IS NOT NULL
+             GROUP BY ${phys(y)} ORDER BY count(*) DESC LIMIT ${limit}
            )
-           SELECT ${x} AS xv, ${y} AS yv, count(*)::text AS n
+           SELECT ${phys(x)} AS xv, ${phys(y)} AS yv, count(*)::text AS n
            FROM records
            WHERE ${where.sql}
-             AND ${x} IN (SELECT v FROM tx) AND ${y} IN (SELECT v FROM ty)
-           GROUP BY ${x}, ${y}`,
+             AND ${phys(x)} IN (SELECT v FROM tx) AND ${phys(y)} IN (SELECT v FROM ty)
+           GROUP BY ${phys(x)}, ${phys(y)}`,
           where.params
         );
         return NextResponse.json({
